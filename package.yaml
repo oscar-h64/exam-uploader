@@ -21,6 +21,8 @@ description:         Please see the README on GitHub at <https://github.com/osca
 
 dependencies:
 - base >= 4.7 && < 5
+- optparse-applicative
+- uow-apis
 
 library:
   source-dirs: src
@@ -29,17 +31,6 @@ executables:
   exam-uploader-exe:
     main:                Main.hs
     source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - exam-uploader
-
-tests:
-  exam-uploader-test:
-    main:                Spec.hs
-    source-dirs:         test
     ghc-options:
     - -threaded
     - -rtsopts
