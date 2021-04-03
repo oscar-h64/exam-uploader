@@ -24,16 +24,15 @@ dependencies:
 - filepath
 - fsnotify
 - optparse-applicative
+- servant-client-core
 - text
 - uow-apis
 - uuid
 
 default-extensions:
+- OverloadedStrings
 - RecordWildCards
 - TypeApplications
-
-library:
-  source-dirs: src
 
 executables:
   exam-uploader-exe:
@@ -43,5 +42,3 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    dependencies:
-    - exam-uploader
