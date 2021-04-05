@@ -4,9 +4,11 @@ module Main where
 
 --------------------------------------------------------------------------------
 
-import Control.Monad ( void )
+import Control.Concurrent ( threadDelay )
+import Control.Concurrent.Async ( concurrently_ )
+import Control.Concurrent.Chan ( newChan, readChan, writeChan )
+import Control.Monad ( forever, void )
 
-import Data.Maybe
 import Data.Text ( Text )
 import Data.UUID ( UUID, fromString )
 
@@ -14,7 +16,6 @@ import Options.Applicative
 
 import Servant.Client.Core ( parseBaseUrl )
 
-import System.Exit
 import System.FilePath ( splitFileName, takeFileName )
 import System.FSNotify
 
@@ -74,7 +75,10 @@ main = do
     let pred (Modified path _ False) = takeFileName path == file
         pred _ = False
 
-    let action event = do
+    chan <- newChan
+
+    let processThread = forever $ do
+            event <- readChan chan
             let path = eventPath event
             res <- withAEP optInstance optSSC
                  $ uploadFile optAssessment path True
@@ -82,10 +86,16 @@ main = do
             -- Print if there was an error making the request
             either print (const $ putStrLn "File Uploaded Successfully") res
 
-    withManager $ \mgr -> do
-        watchDir mgr dir pred action
+            -- Wait at least 5 seconds between uploads
+            -- Otherwise AEP can 500 because of database locks
+            threadDelay 5000000
 
-        putStrLn "Watcher started. Press enter to stop"
-        void $ getLine
+    let watchThread = withManager $ \mgr -> do
+            watchDir mgr dir pred (writeChan chan)
+
+            putStrLn "Watcher started. Press enter to stop"
+            void getLine
+
+    concurrently_ processThread watchThread
 
 --------------------------------------------------------------------------------
