@@ -24,9 +24,9 @@ import Warwick.AEP
 
 data Options = MkOptions {
     optSSC :: Text,
-    optMAssessment :: Maybe UUID,
+    optAssessment :: UUID,
     optFile :: FilePath,
-    optMInstance :: Maybe AEPInstance
+    optInstance :: AEPInstance
 }
 
 options :: Parser Options
@@ -34,22 +34,21 @@ options = MkOptions <$> strOption (  long "ssc"
                                   <> metavar "SSC"
                                   <> help "The value of your AEP SSC cookie"
                                   )
-                    <*> fmap fromString (strOption
-                            (  long "assessment"
-                            <> metavar "ASSESSMENT"
-                            <> help "The UUID of the assessment in AEP"
-                            ))
+                    <*> option auto (  long "assessment"
+                                    <> metavar "ASSESSMENT"
+                                    <> help "The UUID of the assessment in AEP"
+                                    )
                     <*> strOption (  long "file"
                                   <> metavar "FILEPATH"
                                   <> help "The file to watch and upload"
                                   )
-                    <*> fmap instanceFromString (strOption
+                    <*> option (maybeReader instanceFromString)
                             (  long "instance"
                             <> metavar "live|sandbox|URL"
                             <> help "The AEP instance to use"
-                            <> value "live"
+                            <> value Live
                             <> showDefault
-                            ))
+                            )
 
 optInfo :: ParserInfo Options
 optInfo = info (options <**> helper) 
@@ -69,14 +68,6 @@ instanceFromString url = CustomInstance <$> parseBaseUrl url
 main :: IO ()
 main = do
     MkOptions{..} <- execParser optInfo
-
-    optAssessment <- case optMAssessment of
-        Nothing -> putStrLn "Invalid UUID for assessment" >> exitFailure
-        Just uuid -> pure uuid
-
-    optInstance <- case optMInstance of
-        Nothing -> putStrLn "Invalid AEP instance" >> exitFailure
-        Just inst -> pure inst
 
     let (dir, file) = splitFileName optFile
 
